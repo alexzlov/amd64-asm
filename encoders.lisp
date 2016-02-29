@@ -5,7 +5,7 @@
 
 ; maybe move condition definitions somewhere else
 (define-condition assembler-error (error)
-  (()))
+  ())
 
 (define-condition encoding-error (assembler-error)
   ((form :initarg :form :reader encoding-error-form)))
@@ -15,25 +15,25 @@
 
 ; make this more sophisticated for error handling later
 (defmacro with-checks (pred &body body)
-  `(if ,pred 
+  `(if ,pred
        (progn ,@body)
        (error 'assertion-failed :check ',pred)))
 
 (defparameter *byte-regs* '(:al :bl :cl :dl :sil :dil :bpl :spl
-			    :r8b :r9b :r10b :r11b :r12b :r13b :r14b :r15b))
+                            :r8b :r9b :r10b :r11b :r12b :r13b :r14b :r15b))
 
 (defparameter *half-regs* '(:eax :ebx :ecx :edx :esi :edi :ebp :esp
-			    :r8d :r9d :r10d :r11d :r12d :r13d :r14d :r15d))
+                            :r8d :r9d :r10d :r11d :r12d :r13d :r14d :r15d))
 
 (defparameter *word-regs* '(:rax :rbx :rcx :rdx :rsi :rdi :rbp :rsp
-			    :r8 :r9 :r10 :r11 :r12 :r13 :r14 :r15))
+                            :r8 :r9 :r10 :r11 :r12 :r13 :r14 :r15))
 
 (defparameter *vec-regs* '(:xmm0 :xmm3 :xmm1 :xmm2 :xmm6 :xmm7 :xmm5 :xmm4
-			   :xmm8 :xmm9 :xmm10 :xmm11 :xmm12 :xmm13 :xmm14 
-			   :xmm15))
+                           :xmm8 :xmm9 :xmm10 :xmm11 :xmm12 :xmm13 :xmm14
+                           :xmm15))
 
 (defparameter *sdis* '(:jo :jno :jb :jnb :jz :jnz :jbe :jnbe
-		       :js :jns :jp :jnp :jl :jge :jle :jg :jmp))
+                       :js :jns :jp :jnp :jl :jge :jle :jg :jmp))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *prefixes* '(#x66 #x67 #x64 #x65 #xF0 #xF3 #xF2)))
@@ -67,7 +67,7 @@
 
 (defun new-ocinfo ()
   (make-ocinfo :opcodes (make-array 0 :fill-pointer t)
-	       :prefixes (make-array 0 :fill-pointer t)))
+               :prefixes (make-array 0 :fill-pointer t)))
 
 (defun specifier-width (spec)
   (case spec
@@ -172,7 +172,7 @@
 (defun decode-rex (r)
   (with-checks (integerp r)
     (list :w (ash (logand r #x8) -3)
-	  :r (ash (logand r #x4) -2)	  
+	  :r (ash (logand r #x4) -2)
 	  :x (ash (logand r #x2) -1)
 	  :b (logand r #x1))))
 
@@ -216,7 +216,7 @@
 	  (setf (oprinfo-imm.bytes insn) width)
 	  (setf (oprinfo-imm.rel-type insn) type)
 	  (setf (oprinfo-imm.rel-addn insn) (or (third imm) 0))))))
-  
+
 (defun add-opcode-extension (insn subcode)
   (with-checks (integerp subcode)
     (setf (oprinfo-modrm.reg insn) subcode)))
@@ -247,7 +247,7 @@
       (setf (oprinfo-sib.index insn) #x04)))
 
 (defun compute-disp.bytes (disp bytes)
-  (or bytes 
+  (or bytes
       (let ((sz (immediate-width disp)))
 	(if (eql sz 2) 4 sz))))
 
@@ -267,7 +267,7 @@
 (defun add-mem-rest (insn base index scale)
   (if (or index (same-reg? base :rsp) (same-reg? base :r12))
       (progn (setf (oprinfo-modrm.rm insn) #x04)
-	     (setf (oprinfo-sib.base insn) 
+	     (setf (oprinfo-sib.base insn)
 		   (or (register-number base) #x5))
 	     (add-sib.index insn index scale))
       (setf (oprinfo-modrm.rm insn) (register-number base))))
@@ -294,8 +294,8 @@
 	 (setf (oprinfo-sib.base insn) #x05)
 	 (add-sib.index insn index scale)
 	 (add-disp insn disp :rel #x04))
-	((and (or (same-reg? base :rbp) 
-		  (same-reg? base :r13)) 
+	((and (or (same-reg? base :rbp)
+		  (same-reg? base :r13))
 	      (eql disp 0))
 	 (add-modrm.mod-only insn #x01)
 	 (add-disp insn disp :rel #x01)
@@ -308,7 +308,7 @@
 ; Syntax for defining instruction encoders.
 ; Encoder consists of sequences of clauses, each
 ; with two parts: a pattern, and a production.
-; The pattern is a sequence of one or more of 
+; The pattern is a sequence of one or more of
 ; the following symbols:
 ; r8 rm8 r32 rm32 r64 rm64 imm8 imm32 imm64 s32 s64
 ; x xm32 xm64 xm128
@@ -335,7 +335,7 @@
 ; The instruction width is determined by the form of the destination.
 ; The /0 through /7 /r /rm and +r terms are necessary to match
 ; the syntax of the processor reference manual, but are somewhat
-; awkward to use programatically because they have multiple 
+; awkward to use programatically because they have multiple
 ; implications. These terms are transformed as follows:
 ; /0 through /7 -> /n /rm
 ; ib through iw -> ix
@@ -433,11 +433,11 @@
 						       operands)))
 	    (cond
 	      ((subcode-command? cmd)
-	       (cons `(add-opcode-extension ,oinfo 
+	       (cons `(add-opcode-extension ,oinfo
 					    ,(subcode-for-subcode-command cmd))
 		     (ignore)))
 	      ((immediate-command? cmd)
-	       (cons `(add-immediate-operand ,oinfo ,opr 
+	       (cons `(add-immediate-operand ,oinfo ,opr
 					     ,(width-for-immediate-command cmd)
 					     ',(rel-for-immediate-command cmd))
 		     (advance)))
@@ -473,10 +473,10 @@
 	   (pfxs (collect-prefixes ocs))
 	   (opcodes (collect-opcodes ocs)))
       `(,@(mapcar #'(lambda (pfx)
-		      `(vector-push-extend ,pfx (ocinfo-prefixes ,ocinfo))) 
+		      `(vector-push-extend ,pfx (ocinfo-prefixes ,ocinfo)))
 		  pfxs)
 	  ,@(mapcar #'(lambda (oc)
-			`(vector-push-extend ,oc (ocinfo-opcodes ,ocinfo))) 
+			`(vector-push-extend ,oc (ocinfo-opcodes ,ocinfo)))
 		    opcodes))))
 
   ; note that this may latter be undone in the command handlers
@@ -495,7 +495,7 @@
 	 ,@(generate-operand-handlers ocinfo oprinfo cmds operands)
 	 ,@(generate-opcode-handlers ocinfo cmds)
 	 (values ,ocinfo ,oprinfo))))
-  
+
   (defun transform-constraint (constraint operand)
     `(operand-matches? ,operand ',constraint))
 
@@ -508,7 +508,7 @@
 (defmacro define-encoder (insn operands &body body)
   (let ((name (prefixsym "ENCODE-" insn)))
     (push (list (intern (symbol-name insn) "KEYWORD") body) *encoders*)
-    `(defun ,name ,operands 
+    `(defun ,name ,operands
        (cond ,@(mapcar #'(lambda (clause)
 			   (transform-clause clause operands))
 		       body)))))
@@ -560,7 +560,7 @@
 (defun maybe-emit-sib (ln oprinfo)
   (with-slots ((scale sib.scale) (index sib.index) (base sib.base)) oprinfo
     (and scale index base
-	 (emit-byte ln (compose-sib scale 
+	 (emit-byte ln (compose-sib scale
 				    (register-low-part index)
 				    (register-low-part base))))))
 
@@ -597,7 +597,7 @@
     (encode-instruction ln ocinfo oprinfo)))
 
 (defun encode-insn (insn ln)
-  (handler-case 
+  (handler-case
       (let ((fun (prefixsym "ENCODE-" (car insn) "AMD64-ASM")))
 	(do-encode ln (symbol-function fun) (cdr insn)))
     (assertion-failed (as) (error 'assertion-failed :form insn
@@ -717,7 +717,7 @@
   `(progn ,@(iter (for oc from #x40 to #x4F)
 		  (for insn in '(cmovo cmovno cmovb cmovnb
 				 cmovz cmovnz cmovbe cmovnbe
-				 cmovs cmovns cmovp cmovnp 
+				 cmovs cmovns cmovp cmovnp
 				 cmovl cmovge cmovle cmovg))
 		  (collect
 		      `(define-encoder ,insn (dest source)
@@ -759,7 +759,7 @@
 		  (for oc2 from #x80 to #x8F)
 		  (for insn in '(jo jno jb jnb
 				 jz jnz jbe jnbe
-				 js jns jp jnp 
+				 js jns jp jnp
 				 jl jge jle jg))
 		  (collect
 		      `(define-encoder ,insn (offset)
@@ -767,7 +767,7 @@
 			 ((imm32) (#x0F ,oc2 cd)))))))
 
 (define-jcc-encoders)
-		       
+
 (define-encoder jmp (target)
   ((imm8) (#xEB cb))
   ((imm32) (#xE9 cd))
@@ -832,7 +832,7 @@
   `(progn ,@(iter (for oc from #x90 to #x9F)
 		  (for insn in '(seto setno setb setnb
 				 setz setnz setbe setnbe
-				 sets setns setp setnp 
+				 sets setns setp setnp
 				 setl setge setle setg))
 		  (collect
 		      `(define-encoder ,insn (offset)
@@ -934,17 +934,17 @@
      ((m128 x) (,@opcodes /rm))))
 
 (defmacro define-mov0-128-encoder (name opcodes1 opcodes2)
-  `(define-encoder ,name (dest source) 
+  `(define-encoder ,name (dest source)
      ((x xm128) (,@opcodes1 /r))
      ((xm128 x) (,@opcodes2 /rm))))
 
 (defmacro define-mov0-64-encoder (name opcodes1 opcodes2)
-  `(define-encoder ,name (dest source) 
+  `(define-encoder ,name (dest source)
      ((x xm64) (,@opcodes1 /r))
      ((xm64 x) (,@opcodes2 /rm))))
 
 (defmacro define-mov0-32-encoder (name opcodes1 opcodes2)
-  `(define-encoder ,name (dest source) 
+  `(define-encoder ,name (dest source)
      ((x xm32) (,@opcodes1 /r))
      ((xm32 x) (,@opcodes2 /rm))))
 

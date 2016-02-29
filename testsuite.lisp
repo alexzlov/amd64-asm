@@ -1,12 +1,12 @@
 ; testsuite.lisp
-; Testsuite for the assembler. 
+; Testsuite for the assembler.
 
 (in-package "AMD64-ASM")
 
 (eval-when (:compile-toplevel)
   (defparameter *tests* nil))
 
-(defparameter *yasmbin* "/usr/local/bin/yasm")
+(defparameter *yasmbin* "/usr/bin/yasm")
 (defparameter *tempfile* "test.nasm")
 (defparameter *tempbin* "test")
 
@@ -18,7 +18,7 @@
 (defmacro defasmtest (name &body body)
   (if (not (member name *tests*))
       (push name *tests*))
-  `(defun ,name () 
+  `(defun ,name ()
      (let ((asm ',body))
        (do-test ',name asm))))
 
@@ -59,7 +59,7 @@
 		    (:word '(:rbx :rcx :r8 :r12 :r13)))))
 
 (defun random-xreg-operand ()
-  (nth (random 5) '(:xmm0 :xmm1 :xmm9 :xmm10 :xmm11)))		
+  (nth (random 5) '(:xmm0 :xmm1 :xmm9 :xmm10 :xmm11)))
 
 (defun random-imm-operand (width)
   (let ((range (ecase width
@@ -156,7 +156,7 @@
   (with-output-to-string (str)
     (format str "~A " (nasmize-specifier (first mem)))
     (format str "[ ")
-    (cond 
+    (cond
       ((eql (second mem) :rip)
        (format str "rip ")
        (unless (eql (fifth mem) 0)
@@ -210,10 +210,12 @@
 	      (format file "~A~%" (nasmize-label line))
 	      (format file "~A~%" (nasmize-instruction line))))))
 
+#+sbcl
 (defun run-yasm (filename)
   (sb-ext:run-program *yasmbin* (list "-fbin" filename)
 		      :input nil :output *trace-output*))
 
+#+sbcl
 (defun print-tempfile (filename)
   (sb-ext:run-program "/bin/cat" (list filename)
 		      :input nil :output *trace-output*))
@@ -225,10 +227,10 @@
 
 ; Note that we can't specify tests that might invoke
 ; special encodings for eax as the destination, since
-; yasm does those optimizations and we don't. Also 
+; yasm does those optimizations and we don't. Also
 ; remember that we only emit 64-bit code. We don't
 ; ever generate address-size overrides, so use only
-; 64-bit registers in mem forms. 
+; 64-bit registers in mem forms.
 
 (defasmtest reg-test
   (:add :al :bl)
