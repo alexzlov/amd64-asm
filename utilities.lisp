@@ -6,8 +6,8 @@
 (defun prefixsym (pfx s1 &optional package)
   (let ((str (concatenate 'string pfx (symbol-name s1))))
     (if package
-	(intern str package)
-	(intern str))))
+    (intern str package)
+    (intern str))))
 
 (defun catsym (s1 s2)
   (intern (concatenate 'string (symbol-name s1) (symbol-name s2))))
@@ -38,33 +38,33 @@
   (let ((chg (gensym)))
     `(let ((,chg t))
        (flet ((mark-changed () (setf ,chg t)))
-	 (tagbody
-	    header
-	    (setf ,chg nil)
-	    ,@body
-	    (if ,chg (go header)))))))
+     (tagbody
+        header
+        (setf ,chg nil)
+        ,@body
+        (if ,chg (go header)))))))
 
 (defun extend-vector-with-vector (source dest)
   (iter (for elt in-vector source)
-	(vector-push-extend elt dest)))
+    (vector-push-extend elt dest)))
 
 (defun print-codevector (cv)
   (iter (for byte in-vector cv)
-	(format t "~2,'0X " byte))
+    (format t "~2,'0X " byte))
   (format t "~%"))
 
 (defun load-file-into-vector (file)
   (with-open-file (stream file :direction :input
-			  :element-type 'unsigned-byte)
+              :element-type 'unsigned-byte)
     (let ((out (make-array (file-length stream))))
       (read-sequence out stream)
       out)))
 
 (defun store-vector-into-file (vec file)
   (with-open-file (stream file 
-			  :direction :output
-			  :if-exists :supersede
-			  :element-type 'unsigned-byte)
+              :direction :output
+              :if-exists :supersede
+              :element-type 'unsigned-byte)
     (write-sequence vec stream)))
 
 (defun asciify-string (str)

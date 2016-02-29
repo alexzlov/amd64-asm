@@ -85,9 +85,9 @@
 (defun register-number (reg)
   (let ((rnums '(0 3 1 2 6 7 5 4 8 9 10 11 12 13 14 15)))
     (let ((idx (or (position reg *byte-regs*)
-		   (position reg *half-regs*)
-		   (position reg *word-regs*)
-		   (position reg *vec-regs*))))
+           (position reg *half-regs*)
+           (position reg *word-regs*)
+           (position reg *vec-regs*))))
       (when idx (nth idx rnums)))))
 
 (defun reg? (operand)
@@ -111,17 +111,17 @@
 (defun immediate? (operand)
   (or (integerp operand)
       (and (listp operand)
-	   (or (and (eql (length operand) 2)
-		    (symbolp (first operand))
-		    (symbolp (second operand)))
-	       (and (eql (length operand) 3)
-		    (symbolp (first operand))
-		    (symbolp (second operand))
-		    (integerp (third operand))
-		    (or (<= (signed-width (third operand))
-			    (specifier-width (first operand)))
-			(<= (unsigned-width (third operand))
-			    (specifier-width (first operand)))))))))
+       (or (and (eql (length operand) 2)
+            (symbolp (first operand))
+            (symbolp (second operand)))
+           (and (eql (length operand) 3)
+            (symbolp (first operand))
+            (symbolp (second operand))
+            (integerp (third operand))
+            (or (<= (signed-width (third operand))
+                (specifier-width (first operand)))
+            (<= (unsigned-width (third operand))
+                (specifier-width (first operand)))))))))
 
 (defun immediate-width (operand)
   (if (integerp operand)
@@ -172,9 +172,9 @@
 (defun decode-rex (r)
   (with-checks (integerp r)
     (list :w (ash (logand r #x8) -3)
-	  :r (ash (logand r #x4) -2)
-	  :x (ash (logand r #x2) -1)
-	  :b (logand r #x1))))
+      :r (ash (logand r #x4) -2)
+      :x (ash (logand r #x2) -1)
+      :b (logand r #x1))))
 
 (defun compose-modrm (mod reg rm)
   (with-checks (and (< mod 4) (< reg 8) (< rm 8))
@@ -183,8 +183,8 @@
 (defun decode-modrm (m)
   (with-checks (integerp m)
     (list :mod (logand (ash m -6) #x3)
-	  :reg (logand (ash m -3) #x7)
-	  :rm (logand m #x7))))
+      :reg (logand (ash m -3) #x7)
+      :rm (logand m #x7))))
 
 (defun compose-sib (scale index base)
   (with-checks (and (< scale 8) (< index 8) (< base 8))
@@ -193,29 +193,29 @@
 (defun decode-sib (s)
   (with-checks (integerp s)
     (list :scale (logand (ash s -6) #x3)
-	  :index (logand (ash s -3) #x7)
-	  :base (logand s #x7))))
+      :index (logand (ash s -3) #x7)
+      :base (logand s #x7))))
 
 (defun add-reg-operand (insn reg where)
   (with-checks (reg? reg)
     (let ((num (register-number reg)))
       (ecase where
-	(reg (setf (oprinfo-modrm.reg insn) num))
-	(rm (setf (oprinfo-modrm.mod insn) #x3)
-	     (setf (oprinfo-modrm.rm insn) num))
-	(op (setf (oprinfo-oc.ext insn) num))))))
+    (reg (setf (oprinfo-modrm.reg insn) num))
+    (rm (setf (oprinfo-modrm.mod insn) #x3)
+         (setf (oprinfo-modrm.rm insn) num))
+    (op (setf (oprinfo-oc.ext insn) num))))))
 
 (defun add-immediate-operand (insn imm width type)
   (with-checks (immediate? imm)
     (if (integerp imm)
-	(progn
-	  (setf (oprinfo-imm insn) imm)
-	  (setf (oprinfo-imm.bytes insn) width))
-	(progn
-	  (setf (oprinfo-imm insn) (second imm))
-	  (setf (oprinfo-imm.bytes insn) width)
-	  (setf (oprinfo-imm.rel-type insn) type)
-	  (setf (oprinfo-imm.rel-addn insn) (or (third imm) 0))))))
+    (progn
+      (setf (oprinfo-imm insn) imm)
+      (setf (oprinfo-imm.bytes insn) width))
+    (progn
+      (setf (oprinfo-imm insn) (second imm))
+      (setf (oprinfo-imm.bytes insn) width)
+      (setf (oprinfo-imm.rel-type insn) type)
+      (setf (oprinfo-imm.rel-addn insn) (or (third imm) 0))))))
 
 (defun add-opcode-extension (insn subcode)
   (with-checks (integerp subcode)
@@ -249,27 +249,27 @@
 (defun compute-disp.bytes (disp bytes)
   (or bytes
       (let ((sz (immediate-width disp)))
-	(if (eql sz 2) 4 sz))))
+    (if (eql sz 2) 4 sz))))
 
 (defun add-disp (insn disp type &optional bytes)
   (if (or (not (eql disp 0)) bytes)
       (let ((sz (compute-disp.bytes disp bytes)))
-	(if (integerp disp)
-	    (progn
-	      (setf (oprinfo-disp insn) disp)
-	      (setf (oprinfo-disp.bytes insn) sz))
-	    (progn
-	      (setf (oprinfo-disp insn) (second disp))
-	      (setf (oprinfo-disp.bytes insn) sz)
-	      (setf (oprinfo-disp.rel-type insn) type)
-	      (setf (oprinfo-disp.rel-addn insn) (or (third disp) 0)))))))
+    (if (integerp disp)
+        (progn
+          (setf (oprinfo-disp insn) disp)
+          (setf (oprinfo-disp.bytes insn) sz))
+        (progn
+          (setf (oprinfo-disp insn) (second disp))
+          (setf (oprinfo-disp.bytes insn) sz)
+          (setf (oprinfo-disp.rel-type insn) type)
+          (setf (oprinfo-disp.rel-addn insn) (or (third disp) 0)))))))
 
 (defun add-mem-rest (insn base index scale)
   (if (or index (same-reg? base :rsp) (same-reg? base :r12))
       (progn (setf (oprinfo-modrm.rm insn) #x04)
-	     (setf (oprinfo-sib.base insn)
-		   (or (register-number base) #x5))
-	     (add-sib.index insn index scale))
+         (setf (oprinfo-sib.base insn)
+           (or (register-number base) #x5))
+         (add-sib.index insn index scale))
       (setf (oprinfo-modrm.rm insn) (register-number base))))
 
 (defun add-modrm.mod-and-modrm.rm (insn mod rm)
@@ -284,26 +284,26 @@
     (destructuring-bind (sz base index scale disp) mem
       (declare (ignore sz))
       (unless (or (member base '(:rip :abs)) (register-number base))
-	(error 'encoding-error :form mem))
+    (error 'encoding-error :form mem))
       (cond
-	((eql base :rip)
-	 (add-modrm.mod-and-modrm.rm insn #x0 #x05)
-	 (add-disp insn disp :rel #x04))
-	((eql base :abs)
-	 (add-modrm.mod-and-modrm.rm insn #x0 #x04)
-	 (setf (oprinfo-sib.base insn) #x05)
-	 (add-sib.index insn index scale)
-	 (add-disp insn disp :rel #x04))
-	((and (or (same-reg? base :rbp)
-		  (same-reg? base :r13))
-	      (eql disp 0))
-	 (add-modrm.mod-only insn #x01)
-	 (add-disp insn disp :rel #x01)
-	 (add-mem-rest insn base index scale))
-	(t
-	 (add-modrm.mod-only insn (modrm.mod-for-disp disp))
-	 (add-disp insn disp :rel)
-	 (add-mem-rest insn base index scale))))))
+    ((eql base :rip)
+     (add-modrm.mod-and-modrm.rm insn #x0 #x05)
+     (add-disp insn disp :rel #x04))
+    ((eql base :abs)
+     (add-modrm.mod-and-modrm.rm insn #x0 #x04)
+     (setf (oprinfo-sib.base insn) #x05)
+     (add-sib.index insn index scale)
+     (add-disp insn disp :rel #x04))
+    ((and (or (same-reg? base :rbp)
+          (same-reg? base :r13))
+          (eql disp 0))
+     (add-modrm.mod-only insn #x01)
+     (add-disp insn disp :rel #x01)
+     (add-mem-rest insn base index scale))
+    (t
+     (add-modrm.mod-only insn (modrm.mod-for-disp disp))
+     (add-disp insn disp :rel)
+     (add-mem-rest insn base index scale))))))
 
 ; Syntax for defining instruction encoders.
 ; Encoder consists of sequences of clauses, each
@@ -352,24 +352,24 @@
   (if (or (reg? constraint) (immediate? constraint))
       (eql opr constraint)
       (ecase constraint
-	(rm8 (or (byte-reg? opr) (byte-mem? opr)))
-	(rm32 (or (half-reg? opr) (half-mem? opr)))
-	(rm64 (or (word-reg? opr) (word-mem? opr)))
-	(m8 (byte-mem? opr))
-	(m32 (half-mem? opr))
-	(m64 (word-mem? opr))
-	(m128 (wide-mem? opr))
-	(r8 (byte-reg? opr))
-	(r32 (half-reg? opr))
-	(r64 (word-reg? opr))
-	(x (xmm-reg? opr))
-	(xm32 (or (xmm-reg? opr) (half-mem? opr)))
-	(xm64 (or (xmm-reg? opr) (word-mem? opr)))
-	(xm128 (or (xmm-reg? opr) (wide-mem? opr)))
-	(imm8 (byte-immediate? opr))
-	(imm16 (short-immediate? opr))
-	(imm32 (half-immediate? opr))
-	(imm64 (word-immediate? opr)))))
+    (rm8 (or (byte-reg? opr) (byte-mem? opr)))
+    (rm32 (or (half-reg? opr) (half-mem? opr)))
+    (rm64 (or (word-reg? opr) (word-mem? opr)))
+    (m8 (byte-mem? opr))
+    (m32 (half-mem? opr))
+    (m64 (word-mem? opr))
+    (m128 (wide-mem? opr))
+    (r8 (byte-reg? opr))
+    (r32 (half-reg? opr))
+    (r64 (word-reg? opr))
+    (x (xmm-reg? opr))
+    (xm32 (or (xmm-reg? opr) (half-mem? opr)))
+    (xm64 (or (xmm-reg? opr) (word-mem? opr)))
+    (xm128 (or (xmm-reg? opr) (wide-mem? opr)))
+    (imm8 (byte-immediate? opr))
+    (imm16 (short-immediate? opr))
+    (imm32 (half-immediate? opr))
+    (imm64 (word-immediate? opr)))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun operand-needs-override? (opr)
@@ -408,59 +408,59 @@
 
   (defun regularize-commands (cmds)
     (iter (for cmd in cmds)
-	  (cond
-	    ((subcode-command? cmd)
-	     (collect cmd)
-	     (collect '/rm))
-	    ((immediate-command? cmd)
-	     (collect cmd))
-	    ((eql cmd '/r)
-	     (collect '/r)
-	     (collect '/rm))
-	    ((eql cmd '/rm)
-	     (collect '/rm)
-	     (collect '/r))
-	    (t
-	     (collect cmd)))))
+      (cond
+        ((subcode-command? cmd)
+         (collect cmd)
+         (collect '/rm))
+        ((immediate-command? cmd)
+         (collect cmd))
+        ((eql cmd '/r)
+         (collect '/r)
+         (collect '/rm))
+        ((eql cmd '/rm)
+         (collect '/rm)
+         (collect '/r))
+        (t
+         (collect cmd)))))
 
   (defun generate-operand-handlers (ocinfo oinfo cmds operands)
     (if (and cmds operands)
-	(let ((cmd (car cmds))
-	      (opr (car operands)))
-	  (flet ((advance () (generate-operand-handlers ocinfo oinfo (cdr cmds)
-							(cdr operands)))
-		 (ignore () (generate-operand-handlers ocinfo oinfo (cdr cmds)
-						       operands)))
-	    (cond
-	      ((subcode-command? cmd)
-	       (cons `(add-opcode-extension ,oinfo
-					    ,(subcode-for-subcode-command cmd))
-		     (ignore)))
-	      ((immediate-command? cmd)
-	       (cons `(add-immediate-operand ,oinfo ,opr
-					     ,(width-for-immediate-command cmd)
-					     ',(rel-for-immediate-command cmd))
-		     (advance)))
-	      ((eql cmd '+r)
-	       (cons `(add-reg-operand ,oinfo ,opr 'op) (advance)))
-	      ((eql cmd '/r)
-	       (cons `(add-reg-operand ,oinfo ,opr 'reg) (advance)))
-	      ((eql cmd '/rm)
-	       (cons `(cond ((reg? ,opr)
-			     (add-reg-operand ,oinfo ,opr 'rm))
-			    ((mem? ,opr)
-			     (add-mem-operand ,oinfo ,opr)))
-		     (advance)))
-	      ((eql cmd '*)
-	       (cons `(setf (ocinfo-override? ,ocinfo) nil)
-		     (ignore)))
-	      (t (ignore)))))))
+    (let ((cmd (car cmds))
+          (opr (car operands)))
+      (flet ((advance () (generate-operand-handlers ocinfo oinfo (cdr cmds)
+                            (cdr operands)))
+         (ignore () (generate-operand-handlers ocinfo oinfo (cdr cmds)
+                               operands)))
+        (cond
+          ((subcode-command? cmd)
+           (cons `(add-opcode-extension ,oinfo
+                        ,(subcode-for-subcode-command cmd))
+             (ignore)))
+          ((immediate-command? cmd)
+           (cons `(add-immediate-operand ,oinfo ,opr
+                         ,(width-for-immediate-command cmd)
+                         ',(rel-for-immediate-command cmd))
+             (advance)))
+          ((eql cmd '+r)
+           (cons `(add-reg-operand ,oinfo ,opr 'op) (advance)))
+          ((eql cmd '/r)
+           (cons `(add-reg-operand ,oinfo ,opr 'reg) (advance)))
+          ((eql cmd '/rm)
+           (cons `(cond ((reg? ,opr)
+                 (add-reg-operand ,oinfo ,opr 'rm))
+                ((mem? ,opr)
+                 (add-mem-operand ,oinfo ,opr)))
+             (advance)))
+          ((eql cmd '*)
+           (cons `(setf (ocinfo-override? ,ocinfo) nil)
+             (ignore)))
+          (t (ignore)))))))
 
   (defun find-first-non-prefix (ocs)
     (position (find-if-not #'(lambda (elt)
-			       (member elt *prefixes*))
-			   ocs)
-	      ocs))
+                   (member elt *prefixes*))
+               ocs)
+          ocs))
 
   (defun collect-prefixes (ocs)
     (subseq ocs 0 (find-first-non-prefix ocs)))
@@ -470,75 +470,75 @@
 
   (defun generate-opcode-handlers (ocinfo cmds)
     (let* ((ocs (remove-if-not #'integerp cmds))
-	   (pfxs (collect-prefixes ocs))
-	   (opcodes (collect-opcodes ocs)))
+       (pfxs (collect-prefixes ocs))
+       (opcodes (collect-opcodes ocs)))
       `(,@(mapcar #'(lambda (pfx)
-		      `(vector-push-extend ,pfx (ocinfo-prefixes ,ocinfo)))
-		  pfxs)
-	  ,@(mapcar #'(lambda (oc)
-			`(vector-push-extend ,oc (ocinfo-opcodes ,ocinfo)))
-		    opcodes))))
+              `(vector-push-extend ,pfx (ocinfo-prefixes ,ocinfo)))
+          pfxs)
+      ,@(mapcar #'(lambda (oc)
+            `(vector-push-extend ,oc (ocinfo-opcodes ,ocinfo)))
+            opcodes))))
 
   ; note that this may latter be undone in the command handlers
   (defun maybe-generate-override-setter (ocinfo constraints)
     (if (some #'operand-needs-override? constraints)
-	`(setf (ocinfo-override? ,ocinfo) t)
-	`(progn)))
+    `(setf (ocinfo-override? ,ocinfo) t)
+    `(progn)))
 
   (defun transform-production (pattern production operands)
     (let ((cmds (regularize-commands production))
-	  (oprinfo (gensym))
-	  (ocinfo (gensym)))
+      (oprinfo (gensym))
+      (ocinfo (gensym)))
       `(let ((,oprinfo (make-oprinfo))
-	     (,ocinfo (new-ocinfo)))
-	 ,(maybe-generate-override-setter ocinfo pattern)
-	 ,@(generate-operand-handlers ocinfo oprinfo cmds operands)
-	 ,@(generate-opcode-handlers ocinfo cmds)
-	 (values ,ocinfo ,oprinfo))))
+         (,ocinfo (new-ocinfo)))
+     ,(maybe-generate-override-setter ocinfo pattern)
+     ,@(generate-operand-handlers ocinfo oprinfo cmds operands)
+     ,@(generate-opcode-handlers ocinfo cmds)
+     (values ,ocinfo ,oprinfo))))
 
   (defun transform-constraint (constraint operand)
     `(operand-matches? ,operand ',constraint))
 
   (defun transform-clause (clause operands)
     (let ((pattern (car clause))
-	  (production (cadr clause)))
+      (production (cadr clause)))
       `((and ,@(mapcar #'transform-constraint pattern operands))
-	,(transform-production pattern production operands)))))
+    ,(transform-production pattern production operands)))))
 
 (defmacro define-encoder (insn operands &body body)
   (let ((name (prefixsym "ENCODE-" insn)))
     (push (list (intern (symbol-name insn) "KEYWORD") body) *encoders*)
     `(defun ,name ,operands
        (cond ,@(mapcar #'(lambda (clause)
-			   (transform-clause clause operands))
-		       body)))))
+               (transform-clause clause operands))
+               body)))))
 
 (defun register-low-part (reg)
   (if (integerp reg) (logand reg #x7)))
 
 (defun req-rex-bit (&rest regs)
   (let ((vals (iter (for reg in regs)
-		    (if (and (integerp reg) (> reg 7))
-			(collect 1)
-			(collect 0)))))
+            (if (and (integerp reg) (> reg 7))
+            (collect 1)
+            (collect 0)))))
     (apply #'max vals)))
 
 (defun maybe-emit-rex (ln ocinfo oprinfo)
   (with-slots ((reg modrm.reg)
-	       (rm modrm.rm)
-	       (index sib.index)
-	       (base sib.base)
-	       (ext oc.ext)) oprinfo
+           (rm modrm.rm)
+           (index sib.index)
+           (base sib.base)
+           (ext oc.ext)) oprinfo
     (let ((rex (compose-rex (if (ocinfo-override? ocinfo) 1 0)
-			    (req-rex-bit reg)
-			    (req-rex-bit index)
-			    (req-rex-bit base rm ext))))
+                (req-rex-bit reg)
+                (req-rex-bit index)
+                (req-rex-bit base rm ext))))
       (if (not (eql rex #x40))
-	  (emit-byte ln rex)))))
+      (emit-byte ln rex)))))
 
 (defun maybe-emit-prefixes (ln ocinfo)
   (iter (for pfx in-vector (ocinfo-prefixes ocinfo))
-	(emit-byte ln pfx)))
+    (emit-byte ln pfx)))
 
 (defun emit-opcode-maybe-extended (ln opc oprinfo)
   (emit-byte ln (+ opc (register-low-part (or (oprinfo-oc.ext oprinfo) 0)))))
@@ -546,41 +546,41 @@
 (defun emit-opcodes (ln ocinfo oprinfo)
   (if (eql (elt (ocinfo-opcodes ocinfo) 0) #x0F)
       (progn
-	(emit-byte ln #x0F)
-	(emit-opcode-maybe-extended ln (elt (ocinfo-opcodes ocinfo) 1) oprinfo))
+    (emit-byte ln #x0F)
+    (emit-opcode-maybe-extended ln (elt (ocinfo-opcodes ocinfo) 1) oprinfo))
       (emit-opcode-maybe-extended ln (elt (ocinfo-opcodes ocinfo) 0) oprinfo)))
 
 (defun maybe-emit-modrm (ln oprinfo)
   (with-slots ((mod modrm.mod) (reg modrm.reg) (rm modrm.rm)) oprinfo
     (and mod reg rm
-	(emit-byte ln (compose-modrm mod
-				     (register-low-part reg)
-				     (register-low-part rm))))))
+    (emit-byte ln (compose-modrm mod
+                     (register-low-part reg)
+                     (register-low-part rm))))))
 
 (defun maybe-emit-sib (ln oprinfo)
   (with-slots ((scale sib.scale) (index sib.index) (base sib.base)) oprinfo
     (and scale index base
-	 (emit-byte ln (compose-sib scale
-				    (register-low-part index)
-				    (register-low-part base))))))
+     (emit-byte ln (compose-sib scale
+                    (register-low-part index)
+                    (register-low-part base))))))
 
 (defun do-emit-disp-or-imm (ln disp-or-imm bytes type addn)
   (when (and disp-or-imm bytes)
     (if (integerp disp-or-imm)
-	(emit-bytes ln disp-or-imm bytes)
-	(progn
-	  (emit-reloc ln disp-or-imm bytes type)
-	  (emit-bytes ln addn bytes)))))
+    (emit-bytes ln disp-or-imm bytes)
+    (progn
+      (emit-reloc ln disp-or-imm bytes type)
+      (emit-bytes ln addn bytes)))))
 
 (defun maybe-emit-disp (ln oprinfo)
   (with-slots ((disp disp) (bytes disp.bytes)) oprinfo
     (do-emit-disp-or-imm ln disp bytes (oprinfo-disp.rel-type oprinfo)
-			 (oprinfo-disp.rel-addn oprinfo))))
+             (oprinfo-disp.rel-addn oprinfo))))
 
 (defun maybe-emit-imm (ln oprinfo)
   (with-slots ((imm imm) (bytes imm.bytes)) oprinfo
     (do-emit-disp-or-imm ln imm bytes (oprinfo-imm.rel-type oprinfo)
-			 (oprinfo-imm.rel-addn oprinfo))))
+             (oprinfo-imm.rel-addn oprinfo))))
 
 (defun encode-instruction (ln ocinfo oprinfo)
   (maybe-emit-prefixes ln ocinfo)
@@ -599,11 +599,11 @@
 (defun encode-insn (insn ln)
   (handler-case
       (let ((fun (prefixsym "ENCODE-" (car insn) "AMD64-ASM")))
-	(do-encode ln (symbol-function fun) (cdr insn)))
+    (do-encode ln (symbol-function fun) (cdr insn)))
     (assertion-failed (as) (error 'assertion-failed :form insn
-				  :check (assertion-failed-check as)))
+                  :check (assertion-failed-check as)))
     (condition (condition) (declare (ignore condition))
-	       (error 'encoding-error :form insn))))
+           (error 'encoding-error :form insn))))
 
 ; Encoders for general 8/32/64-bit integer instructions
 
@@ -620,9 +620,9 @@
 
 (defmacro define-type0-encoder (name base subcode)
   (let ((base1 base)
-	(base2 (+ base 1))
-	(base3 (+ base 2))
-	(base4 (+ base 3)))
+    (base2 (+ base 1))
+    (base3 (+ base 2))
+    (base4 (+ base 3)))
     `(define-encoder ,name (dest source)
        ((rm8 imm8) (#x80 ,subcode ib))
        ((rm32 imm8) (#x83 ,subcode ib))
@@ -638,7 +638,7 @@
 
 (defmacro define-type1-encoder (name base code)
   (let ((base1 base)
-	(base2 (+ base 1)))
+    (base2 (+ base 1)))
     `(define-encoder ,name (dest)
        ((rm8) (,base1 ,code))
        ((rm32) (,base2 ,code))
@@ -715,14 +715,14 @@
 
 (defmacro define-cmovcc-encoders ()
   `(progn ,@(iter (for oc from #x40 to #x4F)
-		  (for insn in '(cmovo cmovno cmovb cmovnb
-				 cmovz cmovnz cmovbe cmovnbe
-				 cmovs cmovns cmovp cmovnp
-				 cmovl cmovge cmovle cmovg))
-		  (collect
-		      `(define-encoder ,insn (dest source)
-			 ((r32 rm32) (#x0F ,oc /r))
-			 ((r64 rm64) (#x0F ,oc /r)))))))
+          (for insn in '(cmovo cmovno cmovb cmovnb
+                 cmovz cmovnz cmovbe cmovnbe
+                 cmovs cmovns cmovp cmovnp
+                 cmovl cmovge cmovle cmovg))
+          (collect
+              `(define-encoder ,insn (dest source)
+             ((r32 rm32) (#x0F ,oc /r))
+             ((r64 rm64) (#x0F ,oc /r)))))))
 
 (define-cmovcc-encoders)
 
@@ -756,15 +756,15 @@
 
 (defmacro define-jcc-encoders ()
   `(progn ,@(iter (for oc from #x70 to #x7F)
-		  (for oc2 from #x80 to #x8F)
-		  (for insn in '(jo jno jb jnb
-				 jz jnz jbe jnbe
-				 js jns jp jnp
-				 jl jge jle jg))
-		  (collect
-		      `(define-encoder ,insn (offset)
-			 ((imm8) (,oc cb))
-			 ((imm32) (#x0F ,oc2 cd)))))))
+          (for oc2 from #x80 to #x8F)
+          (for insn in '(jo jno jb jnb
+                 jz jnz jbe jnbe
+                 js jns jp jnp
+                 jl jge jle jg))
+          (collect
+              `(define-encoder ,insn (offset)
+             ((imm8) (,oc cb))
+             ((imm32) (#x0F ,oc2 cd)))))))
 
 (define-jcc-encoders)
 
@@ -830,13 +830,13 @@
 
 (defmacro define-setcc-encoders ()
   `(progn ,@(iter (for oc from #x90 to #x9F)
-		  (for insn in '(seto setno setb setnb
-				 setz setnz setbe setnbe
-				 sets setns setp setnp
-				 setl setge setle setg))
-		  (collect
-		      `(define-encoder ,insn (offset)
-			 ((rm8) (#x0F ,oc /2)))))))
+          (for insn in '(seto setno setb setnb
+                 setz setnz setbe setnbe
+                 sets setns setp setnp
+                 setl setge setle setg))
+          (collect
+              `(define-encoder ,insn (offset)
+             ((rm8) (#x0F ,oc /2)))))))
 
 (define-setcc-encoders)
 

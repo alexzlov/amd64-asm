@@ -1,4 +1,4 @@
 clean:
-	rm -rf *.fasl
-	rm -rf *~
+    rm -rf *.fasl
+    rm -rf *~
 

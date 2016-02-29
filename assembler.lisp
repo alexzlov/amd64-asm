@@ -30,12 +30,12 @@
 
 (defun new-asmfrag ()
   (make-asmfrag :buffer (make-array 0 :fill-pointer t)
-		:relocs (make-array 0 :fill-pointer t)
-		:labels (make-array 0 :fill-pointer t)))
+        :relocs (make-array 0 :fill-pointer t)
+        :labels (make-array 0 :fill-pointer t)))
 
 (defun new-asmbin ()
   (make-asmbin :buffer (make-array 0 :fill-pointer t)
-	       :relocs (make-array 0 :fill-pointer t)))
+           :relocs (make-array 0 :fill-pointer t)))
 
 (defun new-asmfun ()
   (make-asmfun :frags (make-array 0 :fill-pointer t)))
@@ -46,15 +46,15 @@
 
 (defun checkpoint-asmfrag (ln)
   (setf (asmfrag-buffer-chkpt ln)
-	(fill-pointer (asmfrag-buffer ln)))
+    (fill-pointer (asmfrag-buffer ln)))
   (setf (asmfrag-relocs-chkpt ln)
-	(fill-pointer (asmfrag-relocs ln))))
+    (fill-pointer (asmfrag-relocs ln))))
 
 (defun restore-asmfrag (ln)
   (setf (fill-pointer (asmfrag-buffer ln))
-	(asmfrag-buffer-chkpt ln))
+    (asmfrag-buffer-chkpt ln))
   (setf (fill-pointer (asmfrag-relocs ln))
-	(asmfrag-relocs-chkpt ln)))
+    (asmfrag-relocs-chkpt ln)))
 
 (defun asmfrag-empty? (ln)
   (eql (fill-pointer (asmfrag-buffer ln)) 0))
@@ -67,7 +67,7 @@
 
 (defun emit-bytes (ln w n)
   (iter (for i from 0 below n)
-	(emit-byte ln (logand #xFF (ash w (- (* i 8)))))))
+    (emit-byte ln (logand #xFF (ash w (- (* i 8)))))))
 
 (defun emit-half (ln w)
   (emit-bytes ln w 4))
@@ -80,26 +80,26 @@
 
 (defun emit-ascii (ln str &optional field)
   (iter (for char in-vector str)
-	(emit-byte ln (char-code char)))
+    (emit-byte ln (char-code char)))
   (when field
     (iter (for i from (length str) below field)
-	  (emit-byte ln 0))))
+      (emit-byte ln 0))))
 
 (defun emit-byte-vector (ln vec)
   (iter (for byte in-vector vec)
-	(emit-byte ln byte)))
+    (emit-byte ln byte)))
 
 (defun emit-reloc (ln sym width type)
   (vector-push-extend (make-asmrel :symbol sym  
-				   :offset (fill-pointer (asmfrag-buffer ln)) 
-				   :width width
-				   :type type)
-		      (asmfrag-relocs ln)))
+                   :offset (fill-pointer (asmfrag-buffer ln)) 
+                   :width width
+                   :type type)
+              (asmfrag-relocs ln)))
 
 (defun record-label (ln sym)
   (vector-push-extend (make-asmlbl :symbol sym 
-				   :offset (fill-pointer (asmfrag-buffer ln)))
-		      (asmfrag-labels ln)))
+                   :offset (fill-pointer (asmfrag-buffer ln)))
+              (asmfrag-labels ln)))
 
 (defun save-sdi-source (ln line)
   (setf (asmfrag-sdi-source ln) line)) 
@@ -112,30 +112,30 @@
 
 (defun encode (source)
   (let ((fun (new-asmfun))
-	(frag (new-asmfrag)))
+    (frag (new-asmfrag)))
     (iter (for line in source)
-	  (cond 
-	    ((label-line? line) (record-label frag line))
-	    ((sdi? line)
-	     (checkpoint-asmfrag frag)
-	     (let ((tx-source (translate-label-ref line) frag))
-	       (save-sdi-source frag tx-source)
-	       (encode-insn tx-source frag))
-	     (add-asmfrag frag fun)
-	     (setf frag (new-asmfrag)))
-	    (t (encode-insn line frag))))
+      (cond 
+        ((label-line? line) (record-label frag line))
+        ((sdi? line)
+         (checkpoint-asmfrag frag)
+         (let ((tx-source (translate-label-ref line) frag))
+           (save-sdi-source frag tx-source)
+           (encode-insn tx-source frag))
+         (add-asmfrag frag fun)
+         (setf frag (new-asmfrag)))
+        (t (encode-insn line frag))))
     (unless (asmfrag-empty? frag)
       (add-asmfrag frag fun))
     fun))
 
 (defun compute-labels (fun)
   (let ((labels (make-hash-table))
-	(ip 0))
+    (ip 0))
     (iter (for frag in-vector (asmfun-frags fun))
-	  (iter (for label in-vector (asmfrag-labels frag))
-		(setf (gethash (asmlbl-symbol label) labels)
-		      (+ ip (asmlbl-offset label))))
-	  (setf ip (+ ip (length (asmfrag-buffer frag)))))
+      (iter (for label in-vector (asmfrag-labels frag))
+        (setf (gethash (asmlbl-symbol label) labels)
+              (+ ip (asmlbl-offset label))))
+      (setf ip (+ ip (length (asmfrag-buffer frag)))))
     labels))
 
 (defun sdi-target (insn)
@@ -157,28 +157,28 @@
 
 (defun widen-sdi (sdi)
   (list (first sdi) (list (specifier-next (sdi-target-specifier sdi))
-			  (sdi-target-symbol sdi) 0)))
+              (sdi-target-symbol sdi) 0)))
 
 (defun resolve-sdi (sdi labels ip)
   (list (first sdi) (- (gethash (sdi-target-symbol sdi) labels) ip)))
 
 (defun link-jumps (fun labels)
   (let ((ip 0)
-	(relaxed))
+    (relaxed))
     (iter (for frag in-vector (asmfun-frags fun))
-	  (setf ip (+ ip (length (asmfrag-buffer frag))))
-	  (when (not (asmfrag-sdi-source frag)) (next-iteration))
-	  (let* ((sdi (asmfrag-sdi-source frag))
-		 (del (- ip (gethash (sdi-target-symbol sdi) labels))))
-	    (if (jump-in-range sdi del)
-		(progn (setf (asmfrag-sdi-source frag) 
-			     (resolve-sdi sdi labels ip))
-		       (restore-asmfrag frag)
-		       (encode-insn (asmfrag-sdi-source frag) frag))
-		(progn (setf (asmfrag-sdi-source frag) (widen-sdi sdi))
-		       (restore-asmfrag frag)
-		       (encode-insn (asmfrag-sdi-source frag) frag)
-		       (setf relaxed t)))))
+      (setf ip (+ ip (length (asmfrag-buffer frag))))
+      (when (not (asmfrag-sdi-source frag)) (next-iteration))
+      (let* ((sdi (asmfrag-sdi-source frag))
+         (del (- ip (gethash (sdi-target-symbol sdi) labels))))
+        (if (jump-in-range sdi del)
+        (progn (setf (asmfrag-sdi-source frag) 
+                 (resolve-sdi sdi labels ip))
+               (restore-asmfrag frag)
+               (encode-insn (asmfrag-sdi-source frag) frag))
+        (progn (setf (asmfrag-sdi-source frag) (widen-sdi sdi))
+               (restore-asmfrag frag)
+               (encode-insn (asmfrag-sdi-source frag) frag)
+               (setf relaxed t)))))
     relaxed))
 
 (defun link (fun)
@@ -190,25 +190,25 @@
 (defun update-reloc-offsets (bin frag)
   (let ((base (fill-pointer (asmbin-buffer bin))))
     (iter (for reloc in-vector (asmfrag-relocs frag))
-	  (incf (asmrel-offset reloc) base))))
+      (incf (asmrel-offset reloc) base))))
 
 (defun stitch (fun)
   (let ((bin (new-asmbin)))
     (iter (for frag in-vector (asmfun-frags fun))
-	  (update-reloc-offsets bin frag)
-	  (extend-vector-with-vector (asmfrag-buffer frag)
-				     (asmbin-buffer bin))
-	  (extend-vector-with-vector (asmfrag-relocs frag)
-				     (asmbin-relocs bin)))
+      (update-reloc-offsets bin frag)
+      (extend-vector-with-vector (asmfrag-buffer frag)
+                     (asmbin-buffer bin))
+      (extend-vector-with-vector (asmfrag-relocs frag)
+                     (asmbin-relocs bin)))
     bin))
 
 (defun assemble-code (source)
   (handler-case 
       (stitch (link (encode source)))
     (assertion-failed (as) (format t "Assertion failed: ~A~%"
-				   (assertion-failed-check as)))
+                   (assertion-failed-check as)))
     (encoding-error (ee) (format t "Error encoding form: ~A~%"
-				 (encoding-error-form ee)))))
+                 (encoding-error-form ee)))))
 
 (defun encode-known-data (datum)
   (let ((frag (new-asmfrag)))
@@ -226,16 +226,16 @@
 (defun aggregate (source)
   (let ((fun (new-asmfun)))
     (iter (for datum in source)
-	  (ecase (length datum)
-	    (2 (add-asmfrag (encode-known-data datum) fun))
-	    (3 (add-asmfrag (encode-unknown-data datum) fun))))
-    fun))	  
+      (ecase (length datum)
+        (2 (add-asmfrag (encode-known-data datum) fun))
+        (3 (add-asmfrag (encode-unknown-data datum) fun))))
+    fun))      
 
 (defun assemble-data (source) 
   (handler-case
       (stitch (aggregate source))
     (assertion-failed (as) (format t "Assertion failed: ~A~%"
-				   (assertion-failed-check as)))
+                   (assertion-failed-check as)))
     (encoding-error (ee) (format t "Error aggregating form: ~A~%"
-				 (encoding-error-form ee)))))
+                 (encoding-error-form ee)))))
 
