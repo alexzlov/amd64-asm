@@ -66,8 +66,8 @@
   opcodes)
 
 (defun new-ocinfo ()
-  (make-ocinfo :opcodes (make-array 0 :fill-pointer t)
-               :prefixes (make-array 0 :fill-pointer t)))
+  (make-ocinfo :opcodes (make-array 0 :fill-pointer t :adjustable t)
+               :prefixes (make-array 0 :fill-pointer t :adjustable t)))
 
 (defun specifier-width (spec)
   (case spec
@@ -596,14 +596,18 @@
       (apply fun args)
     (encode-instruction ln ocinfo oprinfo)))
 
+;;(defun encode-insn (insn ln)
+;;  (handler-case
+;;      (let ((fun (prefixsym "ENCODE-" (car insn) "AMD64-ASM")))
+;;    (do-encode ln (symbol-function fun) (cdr insn)))
+;;    (assertion-failed (as) (error 'assertion-failed :form insn
+;;                  :check (assertion-failed-check as)))
+;;    (condition (condition) (declare (ignore condition))
+;;           (error 'encoding-error :form insn))))
+
 (defun encode-insn (insn ln)
-  (handler-case
-      (let ((fun (prefixsym "ENCODE-" (car insn) "AMD64-ASM")))
-    (do-encode ln (symbol-function fun) (cdr insn)))
-    (assertion-failed (as) (error 'assertion-failed :form insn
-                  :check (assertion-failed-check as)))
-    (condition (condition) (declare (ignore condition))
-           (error 'encoding-error :form insn))))
+  (let ((fun (prefixsym "ENCODE-" (car insn) "AMD64-ASM")))
+    (do-encode ln (symbol-function fun) (cdr insn))))
 
 ; Encoders for general 8/32/64-bit integer instructions
 
